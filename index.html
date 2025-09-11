@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; media-src 'self' file:">
+    <title>Electron Tunes</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Drag Area -->
+    <div class="drag-area"></div>
+    
+    <div class="container">
+        <div class="sidebar">
+            <h2>Playlists</h2>
+            <button id="create-playlist-btn" class="create-playlist-btn">+ New Playlist</button>
+            <ul id="playlist-list">
+                <li class="active">All Downloads</li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <h1>All Downloads</h1>
+            <div class="download-section">
+                <input type="text" id="youtube-url" placeholder="Paste YouTube Link Here">
+                <button id="download-button">Download</button>
+                <p id="download-status"></p>
+            </div>
+            <div class="song-list-header">
+                <span>Title</span>
+                <!-- Add more headers like duration later -->
+            </div>
+            <ul id="song-list">
+                <!-- Song items will be added here -->
+            </ul>
+        </div>
+    </div>
+
+    <div class="playback-bar">
+        <div class="playback-info">
+            <div id="now-playing">No song playing</div>
+            <div class="playback-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <div class="time-info">
+                    <span id="current-time">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+            </div>
+        </div>
+        <div class="playback-controls">
+            <button id="prev-button" class="control-button">⏮</button>
+            <button id="play-button" class="control-button">▶</button>
+            <button id="next-button" class="control-button">⏭</button>
+            <div class="volume-control">
+                <button id="mute-button" class="control-button">🔊</button>
+                <div class="volume-slider">
+                    <div class="volume-fill"></div>
+                </div>
+                <span id="volume-display">100%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Playlist Modal -->
+    <div id="create-playlist-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Playlist</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="playlist-name-input" placeholder="Enter playlist name..." maxlength="50">
+                <div class="modal-actions">
+                    <button id="cancel-create-playlist" class="btn-secondary">Cancel</button>
+                    <button id="confirm-create-playlist" class="btn-primary">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add to Playlist Modal -->
+    <div id="add-to-playlist-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add to Playlist</h3>
+                <span class="close-add-to-playlist-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="add-to-playlist-song-title">Song Title</p>
+                <div class="playlist-selection">
+                    <label>Select playlist:</label>
+                    <select id="playlist-select">
+                        <option value="">Choose a playlist...</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button id="cancel-add-to-playlist" class="btn-secondary">Cancel</button>
+                    <button id="confirm-add-to-playlist" class="btn-primary">Add to Playlist</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

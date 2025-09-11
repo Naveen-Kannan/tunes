@@ -1,0 +1,635 @@
+/* Modern CSS Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: #000000;
+    color: #ffffff;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevent body scroll */
+}
+
+/* Drag Area */
+.drag-area {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background-color: #111111;
+    border-bottom: 1px solid #222222;
+    -webkit-app-region: drag; /* Makes this area draggable */
+    z-index: 1000;
+}
+
+/* Container Layout */
+.container {
+    display: flex;
+    height: calc(100vh - 120px); /* Account for drag area (30px) + playback bar (90px) */
+    background-color: #000000;
+    margin-top: 30px; /* Push content below drag area */
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: 250px;
+    background-color: #111111;
+    padding: 24px 16px;
+    border-right: 1px solid #222222;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: #ff9800;
+    padding: 0 8px;
+}
+
+#playlist-list {
+    list-style: none;
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+
+#playlist-list li {
+    padding: 12px 16px;
+    margin: 4px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #b3b3b3;
+    font-size: 0.95rem;
+}
+
+#playlist-list li:hover {
+    background-color: #222222;
+    color: #ff9800;
+}
+
+#playlist-list li.active {
+    background-color: #222222;
+    color: #ff9800;
+    font-weight: 500;
+}
+
+/* Main Content Styles */
+.main-content {
+    flex-grow: 1;
+    padding: 32px;
+    padding-bottom: 120px; /* Add space for the fixed playback bar */
+    overflow-y: auto;
+    background-color: #000000;
+    height: calc(100vh - 120px); /* Account for drag area + playback bar height */
+}
+
+.main-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 32px;
+    color: #ff9800;
+    border-bottom: 2px solid #ff9800;
+    padding-bottom: 8px;
+}
+
+/* Download Section */
+.download-section {
+    background-color: #111111;
+    padding: 24px;
+    border-radius: 8px;
+    margin-bottom: 32px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    border: 1px solid #222222;
+}
+
+#youtube-url {
+    flex-grow: 1;
+    padding: 12px 16px;
+    border: 1px solid #333333;
+    border-radius: 6px;
+    background-color: #111111;
+    color: #fff;
+    font-size: 0.95rem;
+}
+
+#youtube-url:focus {
+    outline: none;
+    border-color: #ff9800;
+    box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
+}
+
+#download-button {
+    background-color: #ff9800;
+    color: #000000;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+#download-button:hover {
+    background-color: #ffb74d;
+    transform: translateY(-1px);
+}
+
+#download-button:disabled {
+    background-color: #333333;
+    color: #666666;
+    cursor: not-allowed;
+    transform: none;
+}
+
+#download-status {
+    color: #b3b3b3;
+    font-size: 0.9rem;
+    margin-top: 8px;
+}
+
+/* Song List Styles */
+.song-list-header {
+    display: flex;
+    padding: 12px 16px;
+    color: #ff9800;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #222222;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+#song-list {
+    list-style: none;
+}
+
+.song-item {
+    padding: 12px 16px;
+    margin: 4px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #b3b3b3;
+    font-size: 0.95rem;
+}
+
+.song-item:hover {
+    background-color: #111111;
+    color: #ff9800;
+}
+
+.song-item.playing {
+    background-color: #111111;
+    color: #ff9800;
+    font-weight: 500;
+}
+
+/* Playback Bar */
+.playback-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 90px;
+    background-color: #111111;
+    border-top: 1px solid #222222;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+}
+
+.playback-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#now-playing {
+    color: #ff9800;
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.playback-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.progress-bar {
+    height: 4px;
+    background-color: #333333;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+}
+
+.progress-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background-color: #ff9800;
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.1s linear;
+}
+
+.time-info {
+    display: flex;
+    justify-content: space-between;
+    color: #b3b3b3;
+    font-size: 0.8rem;
+}
+
+.playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.control-button {
+    background: none;
+    border: none;
+    color: #ff9800;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-button:hover {
+    background-color: #222222;
+    transform: scale(1.1);
+}
+
+#play-button {
+    font-size: 1.4rem;
+    background-color: #ff9800;
+    color: #000000;
+}
+
+#play-button:hover {
+    background-color: #ffb74d;
+}
+
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#volume-display {
+    color: #ffffff;
+    font-size: 12px;
+    min-width: 30px;
+    text-align: center;
+}
+
+.volume-slider {
+    width: 100px;
+    height: 4px;
+    background-color: #333333;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+}
+
+.volume-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background-color: #ff9800;
+    border-radius: 2px;
+    width: 100%;
+    transition: width 0.1s linear;
+}
+
+/* Context Menu */
+.context-menu {
+    position: fixed;
+    background-color: #111111;
+    border: 1px solid #222222;
+    border-radius: 8px;
+    padding: 8px 0;
+    min-width: 180px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.context-menu-item {
+    padding: 12px 16px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+.context-menu-item:hover {
+    background-color: #222222;
+    color: #ff9800;
+}
+
+.context-menu-item.delete-playlist {
+    color: #ff4444;
+}
+
+.context-menu-item.delete-playlist:hover {
+    background-color: #222222;
+    color: #ff4444;
+}
+
+/* Style for the remove song item */
+.context-menu-item.remove-song {
+    color: #ffffff;
+}
+
+.context-menu-item.remove-song:hover {
+    background-color: #222222;
+    color: #ff9800;
+}
+
+/* Style for add to playlist item */
+.context-menu-item.add-to-playlist {
+    color: #ffffff;
+}
+
+.context-menu-item.add-to-playlist:hover {
+    background-color: #222222;
+    color: #ff9800;
+}
+
+/* Style for delete song item */
+.context-menu-item.delete-song {
+    color: #ff4444;
+}
+
+.context-menu-item.delete-song:hover {
+    background-color: #222222;
+    color: #ff4444;
+}
+
+/* Style for rename playlist item */
+.context-menu-item.rename-playlist {
+    color: #ffffff;
+}
+
+.context-menu-item.rename-playlist:hover {
+    background-color: #222222;
+    color: #ff9800;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #111111;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #333333;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #444444;
+}
+
+.player-control {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px 10px;
+    transition: all 0.3s ease;
+}
+
+.player-control:hover {
+    transform: scale(1.1);
+    color: #1db954;
+}
+
+.player-control.active {
+    color: #1db954;
+}
+
+/* Create Playlist Button */
+.create-playlist-btn {
+    background-color: #ff9800;
+    color: #000000;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    width: 100%;
+    transition: all 0.2s ease;
+}
+
+.create-playlist-btn:hover {
+    background-color: #ffb74d;
+    transform: translateY(-1px);
+}
+
+.create-playlist-btn:active {
+    transform: translateY(0);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background-color: #111111;
+    margin: 15% auto;
+    padding: 0;
+    border: 1px solid #222222;
+    border-radius: 12px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #222222;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    color: #ff9800;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.close-modal, .close-add-to-playlist-modal {
+    color: #b3b3b3;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.close-modal:hover, .close-add-to-playlist-modal:hover {
+    color: #ff9800;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+#playlist-name-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #333333;
+    border-radius: 6px;
+    background-color: #111111;
+    color: #fff;
+    font-size: 1rem;
+    margin-bottom: 20px;
+    transition: border-color 0.2s ease;
+}
+
+#playlist-name-input:focus {
+    outline: none;
+    border-color: #ff9800;
+    box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn-primary {
+    background-color: #ff9800;
+    color: #000000;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #ffb74d;
+    transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+    background-color: #333333;
+    color: #666666;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: #b3b3b3;
+    border: 1px solid #333333;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #222222;
+    color: #ff9800;
+    border-color: #ff9800;
+}
+
+/* Add to Playlist Modal Styles */
+.playlist-selection {
+    margin-bottom: 20px;
+}
+
+.playlist-selection label {
+    display: block;
+    color: #ffffff;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+#playlist-select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #333333;
+    border-radius: 6px;
+    background-color: #2a2a2a;
+    color: #ffffff;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+}
+
+#playlist-select:focus {
+    outline: none;
+    border-color: #ff9800;
+}
+
+#add-to-playlist-song-title {
+    color: #ffffff;
+    margin-bottom: 15px;
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+    padding: 10px;
+    background-color: #222222;
+    border-radius: 6px;
+}

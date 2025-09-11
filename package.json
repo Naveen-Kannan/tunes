@@ -1,0 +1,73 @@
+{
+  "name": "electron-tunes",
+  "version": "1.0.0",
+  "description": "A Spotify-like music player that downloads from YouTube.",
+  "main": "main.js",
+  "homepage": "./",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build-mac": "electron-builder --mac",
+    "dist": "electron-builder --publish=never",
+    "pack": "electron-builder --dir"
+  },
+  "keywords": [
+    "electron",
+    "music",
+    "youtube",
+    "yt-dlp"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "build": {
+    "appId": "com.electrontunes.app",
+    "productName": "Electron Tunes",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "index.html",
+      "styles.css",
+      "icon.png",
+      "icon.icns",
+      "music-downloads/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.music",
+      "target": "dmg",
+      "icon": "icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist"
+    },
+    "dmg": {
+      "title": "Electron Tunes",
+      "icon": "icon.icns",
+      "background": null,
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "electron": "^29.1.5",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "yt-dlp-wrap": "^2.3.12"
+  }
+}
