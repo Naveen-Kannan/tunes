@@ -3,8 +3,54 @@ const path = require('path');
 const fs = require('fs');
 const YTDlpWrap = require('yt-dlp-wrap').default;
 
-// Initialize yt-dlp
-const ytDlpWrap = new YTDlpWrap(); // Default path, adjust if needed
+// Initialize yt-dlp with dynamic path detection
+let ytDlpWrap;
+
+try {
+    // Try to find yt-dlp in common locations
+    const { execSync } = require('child_process');
+    let ytDlpPath = null;
+    
+    const possibleYtDlpPaths = [
+        '/opt/homebrew/bin/yt-dlp',  // Homebrew on Apple Silicon
+        '/usr/local/bin/yt-dlp',     // Homebrew on Intel Mac
+        '/usr/bin/yt-dlp',           // System installation
+        'yt-dlp'                     // In PATH
+    ];
+    
+    for (const testPath of possibleYtDlpPaths) {
+        try {
+            if (testPath === 'yt-dlp') {
+                // Test if yt-dlp is in PATH
+                execSync('yt-dlp --version', { stdio: 'ignore' });
+                ytDlpPath = 'yt-dlp';
+                break;
+            } else {
+                // Test if file exists and is executable
+                if (fs.existsSync(testPath)) {
+                    ytDlpPath = testPath;
+                    break;
+                }
+            }
+        } catch (error) {
+            // Continue to next path
+            continue;
+        }
+    }
+    
+    if (ytDlpPath) {
+        ytDlpWrap = new YTDlpWrap(ytDlpPath);
+        console.log(`Using yt-dlp at: ${ytDlpPath}`);
+    } else {
+        // Fallback to default (will try to download yt-dlp)
+        ytDlpWrap = new YTDlpWrap();
+        console.log('Using default yt-dlp initialization');
+    }
+} catch (error) {
+    console.error('Error initializing yt-dlp:', error);
+    // Fallback to default
+    ytDlpWrap = new YTDlpWrap();
+}
 
 // Define downloads directory within the project
 const downloadsDir = path.join(__dirname, 'music-downloads');
@@ -175,16 +221,56 @@ ipcMain.handle('download-song', async (event, { youtubeUrl, playlistName = 'All_
 
         console.log(`Downloading to: ${outputFilePath}`);
 
+        // Find ffmpeg executable
+        const { execSync } = require('child_process');
+        let ffmpegPath = null;
+        
+        // Try different possible ffmpeg locations
+        const possiblePaths = [
+            '/opt/homebrew/bin/ffmpeg',  // Homebrew on Apple Silicon
+            '/usr/local/bin/ffmpeg',     // Homebrew on Intel Mac
+            '/usr/bin/ffmpeg',           // System installation
+            'ffmpeg'                     // In PATH
+        ];
+        
+        for (const testPath of possiblePaths) {
+            try {
+                if (testPath === 'ffmpeg') {
+                    // Test if ffmpeg is in PATH
+                    execSync('ffmpeg -version', { stdio: 'ignore' });
+                    ffmpegPath = 'ffmpeg';
+                    break;
+                } else {
+                    // Test if file exists and is executable
+                    if (fs.existsSync(testPath)) {
+                        ffmpegPath = testPath;
+                        break;
+                    }
+                }
+            } catch (error) {
+                // Continue to next path
+                continue;
+            }
+        }
+        
+        if (!ffmpegPath) {
+            throw new Error('ffmpeg not found. Please install ffmpeg: brew install ffmpeg');
+        }
+        
+        console.log(`Using ffmpeg at: ${ffmpegPath}`);
+
         // Download audio only, best quality, convert to mp3
-        await ytDlpWrap.execPromise([
+        const downloadArgs = [
             youtubeUrl,
             '-x', // Extract audio
             '--audio-format', 'mp3',
             '--audio-quality', '0', // 0 is best quality
             '-o', outputFilePath,
-            '--ffmpeg-location', '/opt/homebrew/bin/ffmpeg', // *** IMPORTANT: SET YOUR FFMPEG PATH HERE ***
-            // You might need to install ffmpeg: brew install ffmpeg
-        ]);
+            '--ffmpeg-location', ffmpegPath
+        ];
+        
+        console.log('Download command:', downloadArgs);
+        await ytDlpWrap.execPromise(downloadArgs);
 
         console.log(`Download complete: ${outputFilePath}`);
         
