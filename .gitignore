@@ -61,8 +61,8 @@ jspm_packages/
 out/
 app/
 
-# Music downloads (optional - you might want to keep these)
-# music-downloads/
+# Music downloads (personal data - not tracked)
+music-downloads/
 
 # Temporary files
 *.tmp
