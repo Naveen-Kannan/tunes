@@ -29,6 +29,7 @@
       "main.js",
       "preload.js",
       "renderer.js",
+      "src/**/*",
       "index.html",
       "styles.css",
       "icon.png",
