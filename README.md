@@ -53,6 +53,14 @@ This will:
 
 After running, the app is launchable from Spotlight or your Applications folder.
 
+Packaging nuance:
+- `main.js` requires files under `src/`, so Electron packaging must include `src/**/*` in `package.json`.
+- The local playback control endpoint used by `hotkey` listens on `127.0.0.1:47631`, so the macOS entitlements must include both `com.apple.security.network.client` and `com.apple.security.network.server` for packaged builds.
+
+Playback control:
+- The app exposes a small localhost-only control surface for `POST /control/play_pause`, `POST /control/next`, and `POST /control/previous`.
+- `launcher` uses that path so Tunes playback can be controlled without bringing the app to the foreground.
+
 ## Project Structure
 
 ```
