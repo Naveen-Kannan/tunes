@@ -1,16 +1,10 @@
 (function (root) {
-    const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
-    function selectSongs(songs, query = '', sort = 'order') {
+    function selectSongs(songs, query = '') {
         const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
         const result = songs.filter(song => {
             const text = `${song.title || song.filename} ${song.artist || ''}`.toLocaleLowerCase();
             return words.every(word => text.includes(word));
         });
-        if (sort === 'title' || sort === 'title-desc') {
-            result.sort((a, b) => collator.compare(a.title || a.filename, b.title || b.filename) * (sort === 'title' ? 1 : -1));
-        } else if (sort === 'duration') {
-            result.sort((a, b) => (b.duration || 0) - (a.duration || 0));
-        }
         return result;
     }
     function summarizeSongs(songs) {

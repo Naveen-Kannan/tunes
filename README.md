@@ -14,9 +14,9 @@ A Spotify-inspired desktop music player for macOS that lets you search YouTube, 
 - **Media Key Support** — play/pause and skip with your keyboard's media keys
 - **iPhone Web Player** — stream your library to Safari over Tailscale with no native app
 - **Queue** — view and manage your upcoming tracks
-- **Library UI** — a dark interface with green playback indicators, collapsible playlist sidebar, title/artist filtering, natural title sorting, duration sorting, and song counts
+- **Library UI** — a dark interface with green playback indicators, collapsible playlist sidebar, title/artist filtering and song counts
 - **Quick Actions** — add songs to the queue directly from a row, open song options with the ⋯ button, and click the current song to find it in the library
-- **Remembered Controls** — volume, mute restore level, shuffle, repeat, sort, and sidebar preferences survive relaunches
+- **Remembered Controls** — volume, mute restore level, shuffle, repeat, and sidebar preferences survive relaunches
 
 ## Prerequisites
 
@@ -134,8 +134,8 @@ Space, Left/Right, M, S, and R retain playback shortcuts. Native input controls 
 open dialogs keep their keyboard behavior; Escape closes any dialog or clears a filter.
 
 Filtering only changes the visible library, so an existing playback sequence can
-continue. The header Play button starts at the first visible song. Changing sort
-updates the playback order; playlist order can always be restored with the select.
+continue. Songs stay in playlist order. The header Play button starts at the first
+visible song.
 Repeat One repeats when a song ends; manually choosing Next still advances.
 Volume and seek controls support dragging and keyboard input. Local file URLs encode
 spaces, Unicode, and punctuation so filenames containing # or ? remain playable.

@@ -852,28 +852,16 @@ function addToQueue(song) {
 }
 
 const localSearchInput = document.getElementById('local-search-input');
-const sortSelect = document.getElementById('sort-select');
-sortSelect.value = ['order', 'title', 'title-desc', 'duration'].includes(preferences.sort) ? preferences.sort : 'order';
 localSearchInput.addEventListener('input', applyLibraryView);
-sortSelect.addEventListener('change', () => {
-    savePreference('sort', sortSelect.value);
-    applyLibraryView();
-    if (isShuffleEnabled) updateShuffleQueue();
-});
 document.getElementById('clear-filter-btn').addEventListener('click', clearFilter);
 function clearFilter() {
     localSearchInput.value = '';
     applyLibraryView();
 }
 function applyLibraryView() {
-    const visible = tunesLibrary.selectSongs(playlistSongs, localSearchInput.value, sortSelect.value);
-    const ordered = tunesLibrary.selectSongs(playlistSongs, '', sortSelect.value);
+    const visible = tunesLibrary.selectSongs(playlistSongs, localSearchInput.value);
     const visibleNames = new Set(visible.map(song => song.filename));
-    const items = new Map(getAllSongItems().map(item => [item.dataset.filename, item]));
-    ordered.forEach(song => {
-        const item = items.get(song.filename);
-        if (item) { item.hidden = !visibleNames.has(song.filename); songList.appendChild(item); }
-    });
+    getAllSongItems().forEach(item => { item.hidden = !visibleNames.has(item.dataset.filename); });
     const filtering = !!localSearchInput.value.trim();
     document.getElementById('clear-filter-btn').hidden = !localSearchInput.value;
     document.getElementById('filter-hint').hidden = !!localSearchInput.value;

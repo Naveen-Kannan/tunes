@@ -12,17 +12,15 @@ test('filter matches title and artist, without altering playlist order', () => {
     assert.deepEqual(selectSongs(songs, 'nothing'), []);
     assert.deepEqual(selectSongs(songs, '   '), songs);
 });
-test('title sorting is natural and reversible, with original order retained', () => {
+test('filter preserves playlist order and does not mutate the source', () => {
     const original = [...songs];
-    const ascending = selectSongs(songs, '', 'title');
-    assert.equal(ascending.indexOf(songs[1]) < ascending.indexOf(songs[0]), true);
-    assert.deepEqual(selectSongs(songs, '', 'title-desc'), [...ascending].reverse());
+    assert.deepEqual(selectSongs(songs, 'song'), [songs[0], songs[1]]);
     assert.deepEqual(selectSongs(songs), original);
     assert.deepEqual(songs, original);
 });
-test('duration sorting handles missing metadata and summaries handle empty libraries', () => {
-    assert.equal(selectSongs([...songs, { filename: 'missing.mp3' }], '', 'duration')[0], songs[1]);
+test('summaries handle empty libraries and missing duration metadata', () => {
     assert.equal(summarizeSongs([]), '0 songs · 0 min');
+    assert.equal(summarizeSongs([{ filename: 'missing.mp3' }]), '1 song · 0 min');
     assert.equal(summarizeSongs([{ duration: 3660 }]), '1 song · 1 hr 1 min');
 });
 test('file URLs preserve spaces, punctuation and unicode in local song paths', () => {
