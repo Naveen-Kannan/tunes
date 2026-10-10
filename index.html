@@ -1,165 +1,78 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; media-src 'self' file:">
-    <title>Electron Tunes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com https://img.youtube.com; media-src 'self' file:">
+    <title>Tunes</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-    <!-- Drag Area -->
-    <div class="drag-area"></div>
-
+    <header class="drag-area">
+        <button id="sidebar-toggle" class="titlebar-button" aria-label="Toggle library" title="Toggle library" aria-expanded="true" aria-controls="library-sidebar"><span data-icon="library"></span><span>Library</span></button>
+        <span class="app-name">Tunes</span>
+        <button id="shortcuts-button" class="titlebar-button" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)"><span data-icon="keys"></span></button>
+    </header>
     <div class="container">
         <div class="sidebar-trigger"></div>
-        <div class="sidebar">
-            <h2>Playlists</h2>
-            <button id="create-playlist-btn" class="create-playlist-btn">+ New Playlist</button>
-            <ul id="playlist-list">
-                <li class="active">All Downloads</li>
-            </ul>
-        </div>
-        <div class="main-content">
-            <h1>All Downloads</h1>
-            <!-- Toolbar / Action Bar -->
+        <nav id="library-sidebar" class="sidebar" aria-label="Library">
+            <div class="sidebar-heading"><h2>Playlists</h2><button id="create-playlist-btn" class="icon-button" title="New playlist" aria-label="New playlist" data-icon="plus"></button></div>
+            <ul id="playlist-list"></ul>
+        </nav>
+        <main class="main-content">
+            <section class="library-heading">
+                <div><h1>All Downloads</h1><p id="library-summary" class="muted">Loading…</p></div>
+                <button id="play-library-btn" class="btn-primary"><span data-icon="play"></span>Play</button>
+            </section>
             <div class="action-bar">
-                <div class="input-wrapper search-wrapper">
-                    <span class="input-icon">➕</span>
-                    <input type="text" id="youtube-url" placeholder="Add song (Search or URL)...">
-                </div>
-                <div class="input-wrapper filter-wrapper">
-                    <span class="input-icon">🔍</span>
-                    <input type="text" id="local-search-input" placeholder="Filter...">
-                </div>
+                <div class="input-wrapper search-wrapper"><span class="input-icon" data-icon="plus"></span><input type="text" id="youtube-url" placeholder="Search YouTube or paste a link" aria-label="Find a song on YouTube or paste a link"><button id="add-song-btn" class="input-action" title="Search or download" aria-label="Search or download"><span data-icon="search"></span></button></div>
+                <div class="input-wrapper filter-wrapper"><span class="input-icon" data-icon="search"></span><input type="text" id="local-search-input" placeholder="Filter your music" aria-label="Filter your music"><button id="clear-filter-btn" class="input-action" title="Clear filter" aria-label="Clear filter" hidden data-icon="close"></button><kbd id="filter-hint">⌘F</kbd></div>
+                <select id="sort-select" aria-label="Sort songs" title="Sort songs"><option value="order">Playlist order</option><option value="title">Title: A–Z</option><option value="title-desc">Title: Z–A</option><option value="duration">Longest first</option></select>
             </div>
-            <div id="download-status" style="margin-bottom: 20px; font-size: 0.8rem; color: #1db954; height: 1em;">
-            </div>
-
-            <div class="song-list-header">
-                <span>Title</span>
-                <span style="text-align: right;">Duration</span>
-            </div>
-            <ul id="song-list">
-                <!-- Song items will be added here -->
-            </ul>
-        </div>
+            <div id="download-status" role="status" aria-live="polite"></div>
+            <div class="song-list-header"><span>#</span><span>Title</span><span class="duration-heading" title="Duration" data-icon="clock"></span><span></span></div>
+            <ul id="song-list" aria-label="Songs"></ul>
+            <div id="library-empty" class="empty-state" hidden><span data-icon="music"></span><h3 id="empty-title">No songs</h3><p id="empty-description">Find a song above to add it to your library.</p></div>
+        </main>
     </div>
-
-    <!-- Playback Bar -->
-    <div class="playback-bar">
-        <div class="playback-info">
-            <div id="now-playing">
-                <!-- Javascript will inject content here -->
-            </div>
-        </div>
-
+    <footer class="playback-bar" aria-label="Music player">
+        <button id="now-playing-button" class="playback-info" title="Show current song" aria-label="Show current song"><span id="now-playing"><span class="now-playing-text"><span class="now-playing-label">Not playing</span><span class="now-playing-title">Choose a song</span></span></span></button>
         <div class="playback-controls">
             <div class="control-buttons-row">
-                <button id="shuffle-button" class="control-button" title="Shuffle">🔀</button>
-                <button id="prev-button" class="control-button">⏮</button>
-                <button id="play-button" class="control-button">▶</button>
-                <button id="next-button" class="control-button">⏭</button>
-                <button id="repeat-button" class="control-button" title="Repeat">➡️</button>
+                <button id="shuffle-button" class="control-button" aria-label="Shuffle off" title="Shuffle (S)" aria-pressed="false" data-icon="shuffle"></button>
+                <button id="prev-button" class="control-button" aria-label="Previous song" title="Previous song (←)" data-icon="previous"></button>
+                <button id="play-button" class="control-button" aria-label="Play" title="Play (Space)" data-icon="play"></button>
+                <button id="next-button" class="control-button" aria-label="Next song" title="Next song (→)" data-icon="next"></button>
+                <button id="repeat-button" class="control-button" aria-label="Repeat off" title="Repeat off (R)" data-icon="repeat"></button>
             </div>
-            <div class="playback-progress">
-                <span id="current-time">0:00</span>
-                <div class="progress-bar" id="progress-bar">
-                    <div class="progress-fill" id="progress-fill"></div>
-                </div>
-                <span id="total-duration">0:00</span>
-            </div>
+            <div class="playback-progress"><span id="current-time">0:00</span><input type="range" id="progress-bar" class="progress-bar" min="0" max="100" value="0" step="0.1" aria-label="Playback position" disabled><span id="total-duration">0:00</span></div>
         </div>
-
         <div class="volume-control">
-            <button id="queue-button" class="control-button" title="Queue" style="margin-right: 15px;">☰</button>
-            <button id="mute-button" class="control-button">🔊</button>
-            <div class="volume-slider">
-                <div class="volume-fill"></div>
-            </div>
+            <button id="queue-button" class="control-button" title="Queue (Q)" aria-label="Queue"><span data-icon="queue"></span><span id="queue-count" hidden>0</span></button>
+            <button id="mute-button" class="control-button" title="Mute (M)" aria-label="Mute" data-icon="volume"></button>
+            <input type="range" class="volume-slider" min="0" max="100" value="100" aria-label="Volume">
+            <span id="volume-display">100%</span>
         </div>
+    </footer>
+    <div id="create-playlist-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="create-playlist-title">
+        <div class="modal-content"><div class="modal-header"><h3 id="create-playlist-title">New playlist</h3><button class="close-modal icon-button" aria-label="Close" data-icon="close"></button></div><div class="modal-body"><label for="playlist-name-input">Playlist name</label><input type="text" id="playlist-name-input" placeholder="Give it a name" maxlength="50"><div class="modal-actions"><button id="cancel-create-playlist" class="btn-secondary">Cancel</button><button id="confirm-create-playlist" class="btn-primary">Create</button></div></div></div>
     </div>
-
-    <!-- Create Playlist Modal -->
-    <div id="create-playlist-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Create New Playlist</h3>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <input type="text" id="playlist-name-input" placeholder="Enter playlist name..." maxlength="50">
-                <div class="modal-actions">
-                    <button id="cancel-create-playlist" class="btn-secondary">Cancel</button>
-                    <button id="confirm-create-playlist" class="btn-primary">Create</button>
-                </div>
-            </div>
-        </div>
+    <div id="queue-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="queue-title">
+        <div class="modal-content"><div class="modal-header"><h3 id="queue-title">Up next</h3><button class="close-queue-modal icon-button" aria-label="Close" data-icon="close"></button></div><div class="modal-body"><ul id="queue-list" class="queue-list"></ul><div class="modal-actions"><button id="clear-queue-btn" class="btn-secondary">Clear queue</button></div></div></div>
     </div>
-
-    <!-- Queue Modal -->
-    <div id="queue-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Up Next</h3>
-                <span class="close-queue-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <ul id="queue-list" class="queue-list" style="list-style: none;">
-                    <li style="padding: 10px; color: #888; text-align: center;">Queue is empty</li>
-                </ul>
-                <div class="modal-actions">
-                    <button id="clear-queue-btn" class="btn-secondary">Clear Queue</button>
-                </div>
-            </div>
-        </div>
+    <div id="add-to-playlist-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="add-playlist-title">
+        <div class="modal-content"><div class="modal-header"><h3 id="add-playlist-title">Add to playlist</h3><button class="close-add-to-playlist-modal icon-button" aria-label="Close" data-icon="close"></button></div><div class="modal-body"><p id="add-to-playlist-song-title"></p><div class="playlist-selection"><label for="playlist-select">Select playlist</label><select id="playlist-select"><option value="">Choose a playlist…</option></select></div><div class="modal-actions"><button id="cancel-add-to-playlist" class="btn-secondary">Cancel</button><button id="confirm-add-to-playlist" class="btn-primary">Add to playlist</button></div></div></div>
     </div>
-
-    <!-- Add to Playlist Modal -->
-    <div id="add-to-playlist-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Add to Playlist</h3>
-                <span class="close-add-to-playlist-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p id="add-to-playlist-song-title">Song Title</p>
-                <div class="playlist-selection">
-                    <label>Select playlist:</label>
-                    <select id="playlist-select">
-                        <option value="">Choose a playlist...</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button id="cancel-add-to-playlist" class="btn-secondary">Cancel</button>
-                    <button id="confirm-add-to-playlist" class="btn-primary">Add to Playlist</button>
-                </div>
-            </div>
-        </div>
+    <div id="search-results-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="search-results-title">
+        <div class="modal-content large-modal"><div class="modal-header"><h3 id="search-results-title">YouTube search</h3><button class="close-search-results-modal icon-button" aria-label="Close" data-icon="close"></button></div><div class="modal-body"><div id="search-loading">Searching…</div><ul id="search-results-list" class="search-results-list"></ul></div></div>
     </div>
-
-    <!-- Search Results Modal -->
-    <div id="search-results-modal" class="modal">
-        <div class="modal-content large-modal"> <!-- Add 'large-modal' class in CSS -->
-            <div class="modal-header">
-                <h3>Search Results</h3>
-                <span class="close-search-results-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div id="search-loading" style="display: none; text-align: center; padding: 20px;">
-                    Searching...
-                </div>
-                <ul id="search-results-list" class="search-results-list">
-                    <!-- Results populated here -->
-                </ul>
-            </div>
-        </div>
+    <div id="shortcuts-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">
+        <div class="modal-content"><div class="modal-header"><h3 id="shortcuts-title">Keyboard shortcuts</h3><button class="close-shortcuts-modal icon-button" aria-label="Close" data-icon="close"></button></div><div class="modal-body shortcuts-list"><div><span>Play / pause</span><kbd>Space</kbd></div><div><span>Previous / next song</span><kbd>← / →</kbd></div><div><span>Seek 10 seconds</span><kbd>Shift + ← / →</kbd></div><div><span>Filter your library</span><kbd>⌘F</kbd></div><div><span>Find a new song</span><kbd>⌘K</kbd></div><div><span>Queue / mute / shuffle / repeat</span><kbd>Q / M / S / R</kbd></div><div><span>Close a dialog or clear filter</span><kbd>Esc</kbd></div></div></div>
     </div>
-
+    <div id="toast" role="status" aria-live="polite" hidden></div>
     <script src="src/playback/dictation.js"></script>
+    <script src="src/ui/library.js"></script>
+    <script src="src/ui/icons.js"></script>
     <script src="renderer.js"></script>
 </body>
-
 </html>

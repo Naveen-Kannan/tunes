@@ -14,7 +14,9 @@ A Spotify-inspired desktop music player for macOS that lets you search YouTube, 
 - **Media Key Support** — play/pause and skip with your keyboard's media keys
 - **iPhone Web Player** — stream your library to Safari over Tailscale with no native app
 - **Queue** — view and manage your upcoming tracks
-- **Glassmorphism UI** — dark theme with blurred glass-style panels and a hidden auto-reveal sidebar
+- **Library UI** — a dark interface with green playback indicators, collapsible playlist sidebar, title/artist filtering, natural title sorting, duration sorting, and song counts
+- **Quick Actions** — add songs to the queue directly from a row, open song options with the ⋯ button, and click the current song to find it in the library
+- **Remembered Controls** — volume, mute restore level, shuffle, repeat, sort, and sidebar preferences survive relaunches
 
 ## Prerequisites
 
@@ -120,3 +122,32 @@ Flow renews active sessions every minute; abandoned sessions expire after ten mi
 and playback position for diagnostics. These endpoints stay on `127.0.0.1:47631`.
 
 Run playback lifecycle regression checks with `node --test tests/dictation.test.js`.
+
+### Desktop polish (October 2026)
+
+Tunes is designed for quick access to a private, local music library. The desktop
+refresh preserves the existing download, mobile-player, media-key, and Flow control
+paths. `Library` pins or collapses playlists; collapsed playlists still reveal on
+hover at the left edge. The keyboard icon lists shortcuts: Cmd+F filters the library,
+Cmd+K searches YouTube, Q opens the queue, and Shift+Left/Right seeks ten seconds.
+Space, Left/Right, M, S, and R retain playback shortcuts. Native input controls and
+open dialogs keep their keyboard behavior; Escape closes any dialog or clears a filter.
+
+Filtering only changes the visible library, so an existing playback sequence can
+continue. The header Play button starts at the first visible song. Changing sort
+updates the playback order; playlist order can always be restored with the select.
+Repeat One repeats when a song ends; manually choosing Next still advances.
+Volume and seek controls support dragging and keyboard input. Local file URLs encode
+spaces, Unicode, and punctuation so filenames containing # or ? remain playable.
+
+UI preferences live in renderer localStorage (`tunes.preferences`). Audio does not
+autoplay on launch. The app bundle's identifier and music storage directory stay
+unchanged. Run `node --test tests/*.test.js` for library and Flow lifecycle checks.
+
+When updating while music is playing, stage and verify the new bundle first. Preserve
+the old bundle by renaming it into a backup, then rename the staged bundle into the
+installed path; do not quit or reload the running app. The refreshed UI loads after
+the user's next normal relaunch. Keep the old bundle until that relaunch is verified.
+
+The desktop uses neutral surfaces, compact headings, and direct labels. Decorative
+branding, placeholder artwork, gradients, and promotional empty-state copy are omitted.

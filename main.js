@@ -27,15 +27,17 @@ registerIpcHandlers();
 function createWindow() {
     const mainWindow = new BrowserWindow({
         width: 1000,
-        height: 700,
+        height: 760,
+        minWidth: 660,
+        minHeight: 520,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
             nodeIntegration: false,
         },
         titleBarStyle: 'hiddenInset',
-        trafficLightPosition: { x: 15, y: 15 },
-        backgroundColor: '#000000', // Matches your CSS
+        trafficLightPosition: { x: 16, y: 19 },
+        backgroundColor: '#151515',
     });
 
     mainWindow.loadFile('index.html');
