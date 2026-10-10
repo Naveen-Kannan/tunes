@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Tunes">
+    <meta name="theme-color" content="#0b0b0f">
+    <title>Tunes</title>
+    <link rel="manifest" href="/mobile/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/mobile/icon.png">
+    <link rel="stylesheet" href="/mobile/app.css">
+</head>
+<body>
+    <main class="app-shell">
+        <section class="player-shell" id="player-shell">
+            <header class="top-bar">
+                <div>
+                    <p class="eyebrow">Electron Tunes</p>
+                    <h1>Library</h1>
+                </div>
+            </header>
+
+            <nav class="playlist-row" id="playlist-row"></nav>
+
+            <label class="search-box">
+                <span>Search</span>
+                <input id="search-input" type="search" placeholder="Songs">
+            </label>
+
+            <ol class="song-list" id="song-list"></ol>
+
+            <footer class="now-playing">
+                <div class="track-meta">
+                    <strong id="now-title">Nothing playing</strong>
+                    <span id="now-artist">Pick a song</span>
+                </div>
+                <div class="mode-controls">
+                    <button id="shuffle-button" aria-label="Shuffle">Shuffle</button>
+                    <button id="repeat-button" aria-label="Repeat">Repeat Off</button>
+                </div>
+                <div class="controls">
+                    <button id="prev-button" aria-label="Previous">Prev</button>
+                    <button id="play-button" aria-label="Play or pause">Play</button>
+                    <button id="next-button" aria-label="Next">Next</button>
+                </div>
+                <input id="seek-slider" type="range" min="0" max="1000" value="0">
+            </footer>
+
+            <audio id="audio-player" preload="metadata"></audio>
+        </section>
+    </main>
+    <script src="/mobile/app.js"></script>
+</body>
+</html>

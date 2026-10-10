@@ -5,8 +5,11 @@ const registerIpcHandlers = require('./src/ipc/handlers');
 const pathManager = require('./src/utils/paths');
 const playlistStore = require('./src/services/store');
 const downloader = require('./src/services/downloader');
+const mobileServer = require('./src/mobile/server');
 const controlPort = 47631;
 let controlServer = null;
+let controlRequestID = 0;
+const pendingControls = new Map();
 
 // Initialize Services
 pathManager.initialize();
@@ -55,6 +58,28 @@ function sendPlaybackEvent(channel) {
     });
 }
 
+ipcMain.on('dictation-control-result', (event, result) => {
+    const pending = pendingControls.get(result.requestID);
+    if (pending && pending.webContents === event.sender) pending.finish(result);
+});
+
+function dictationControl(action, token) {
+    const window = BrowserWindow.getAllWindows()[0];
+    if (!window) return Promise.resolve({ paused: true, resumed: false });
+    return new Promise((resolve, reject) => {
+        const requestID = ++controlRequestID;
+        const finish = result => {
+            clearTimeout(timer);
+            pendingControls.delete(requestID);
+            if (result.error) reject(new Error(result.error));
+            else resolve(result);
+        };
+        const timer = setTimeout(() => finish({ error: 'player did not respond' }), 600);
+        pendingControls.set(requestID, { webContents: window.webContents, finish });
+        window.webContents.send('dictation-control', { requestID, action, token });
+    });
+}
+
 function startControlServer() {
     const actions = {
         '/control/play_pause': 'media-play-pause',
@@ -62,7 +87,29 @@ function startControlServer() {
         '/control/previous': 'media-prev-track'
     };
 
-    controlServer = http.createServer((req, res) => {
+    controlServer = http.createServer(async (req, res) => {
+        const url = new URL(req.url, 'http://127.0.0.1');
+        const match = url.pathname.match(/^\/control\/dictation\/(begin|end)$/);
+        if (match || (req.method === 'GET' && url.pathname === '/control/state')) {
+            const action = match ? match[1] : 'state';
+            const token = url.searchParams.get('token');
+            if (match && req.method !== 'POST') {
+                res.writeHead(405).end('method not allowed');
+                return;
+            }
+            if (match && !/^[0-9a-f-]{36}$/i.test(token || '')) {
+                res.writeHead(400).end('invalid recording token');
+                return;
+            }
+            try {
+                const result = await dictationControl(action, token);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result));
+            } catch (error) {
+                res.writeHead(503).end(error.message);
+            }
+            return;
+        }
         if (req.method !== 'POST') {
             res.writeHead(405);
             res.end('method not allowed');
@@ -87,6 +134,7 @@ function startControlServer() {
 app.whenReady().then(() => {
     createWindow();
     startControlServer();
+    mobileServer.start();
 
     // Register media keys
     globalShortcut.register('MediaPlayPause', () => {
@@ -115,4 +163,5 @@ app.on('before-quit', () => {
         controlServer.close();
         controlServer = null;
     }
+    mobileServer.stop();
 });

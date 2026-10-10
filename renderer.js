@@ -1195,3 +1195,13 @@ if (window.electronAPI && window.electronAPI.on) {
         nextButton.click();
     });
 }
+
+// Recording control acknowledges the pause before Flow opens the microphone.
+const dictationPlayback = createDictationPlayback(audioPlayerElement);
+audioPlayerElement.addEventListener('play', () => { playButton.textContent = '⏸'; });
+audioPlayerElement.addEventListener('pause', () => { playButton.textContent = '▶'; });
+window.electronAPI.onDictationControl(async (action, token) => {
+    if (action === 'begin') return dictationPlayback.begin(token);
+    if (action === 'end') return dictationPlayback.end(token);
+    return { paused: audioPlayerElement.paused, currentTime: audioPlayerElement.currentTime };
+});

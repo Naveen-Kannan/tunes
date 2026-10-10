@@ -9,11 +9,13 @@ class Downloader {
     constructor() {
         this.ytDlpWrap = null;
         this.ffmpegPath = null;
+        this.denoPath = null;
     }
 
     initialize() {
         this.initYtDlp();
         this.initFfmpeg();
+        this.initDeno();
     }
 
     initYtDlp() {
@@ -84,6 +86,21 @@ class Downloader {
         }
     }
 
+    initDeno() {
+        const possiblePaths = [
+            '/opt/homebrew/bin/deno',
+            '/usr/local/bin/deno',
+            '/usr/bin/deno'
+        ];
+
+        this.denoPath = possiblePaths.find(testPath => fs.existsSync(testPath)) || null;
+        if (this.denoPath) {
+            console.log(`Using Deno at: ${this.denoPath}`);
+        } else {
+            console.warn('Deno not found. Please install Deno: brew install deno');
+        }
+    }
+
     async downloadSong(youtubeUrl, playlistName = 'All_Downloads') {
         if (!this.ffmpegPath) {
             throw new Error('ffmpeg not found. Please install ffmpeg: brew install ffmpeg');
@@ -92,7 +109,15 @@ class Downloader {
         console.log(`Received download request for: ${youtubeUrl} in playlist: ${playlistName}`);
 
         try {
-            const metadata = await this.ytDlpWrap.getVideoInfo([youtubeUrl, '--no-playlist']);
+            const metadataJson = await this.ytDlpWrap.execPromise([
+                youtubeUrl,
+                '--no-playlist',
+                '--force-ipv4',
+                '--skip-download',
+                '--dump-single-json',
+                ...(this.denoPath ? ['--js-runtimes', `deno:${this.denoPath}`] : [])
+            ]);
+            const metadata = JSON.parse(metadataJson);
             const title = metadata.title || 'downloaded_song';
             const safeTitle = title.replace(/[<>:"/\\|?*]+/g, '_');
             const allDownloadsDir = pathManager.getAllDownloadsDir();
@@ -103,6 +128,7 @@ class Downloader {
             const downloadArgs = [
                 youtubeUrl,
                 '--no-playlist',
+                '--force-ipv4',
                 '-x',
                 '--audio-format', 'mp3',
                 '--audio-quality', '0',
@@ -110,7 +136,7 @@ class Downloader {
                 '--embed-thumbnail',
                 '-o', outputFilePath,
                 '--ffmpeg-location', this.ffmpegPath,
-                '--no-warnings'
+                ...(this.denoPath ? ['--js-runtimes', `deno:${this.denoPath}`] : [])
             ];
 
             await this.ytDlpWrap.execPromise(downloadArgs);

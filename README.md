@@ -12,6 +12,7 @@ A Spotify-inspired desktop music player for macOS that lets you search YouTube, 
 - **Playlist Management** — create, rename, and delete playlists; organize your library your way
 - **Full Playback Controls** — play/pause, skip, shuffle, repeat, volume, and progress scrubbing
 - **Media Key Support** — play/pause and skip with your keyboard's media keys
+- **iPhone Web Player** — stream your library to Safari over Tailscale with no native app
 - **Queue** — view and manage your upcoming tracks
 - **Glassmorphism UI** — dark theme with blurred glass-style panels and a hidden auto-reveal sidebar
 
@@ -23,6 +24,14 @@ A Spotify-inspired desktop music player for macOS that lets you search YouTube, 
 
   ```bash
   brew install yt-dlp
+  ```
+
+  Keep it current with `brew upgrade yt-dlp`; YouTube extractor changes can cause HTTP 403 errors.
+
+- **Deno** — for yt-dlp's YouTube JavaScript challenges
+
+  ```bash
+  brew install deno
   ```
 
 - **ffmpeg** — for audio encoding
@@ -40,16 +49,18 @@ npm start
 
 ## Building & Installing to /Applications
 
-A convenience script handles building and installing the app to your Mac:
+Build the macOS app bundle:
 
 ```bash
-./build_install.sh
+npm run pack
 ```
 
-This will:
-1. Build the macOS app via `electron-builder`
-2. Remove any existing `/Applications/Electron Tunes.app`
-3. Copy the freshly built app into `/Applications`
+Then replace the installed app:
+
+```bash
+rm -rf "/Applications/Electron Tunes.app"
+cp -R "dist/mac-arm64/Electron Tunes.app" /Applications/
+```
 
 After running, the app is launchable from Spotlight or your Applications folder.
 
@@ -60,6 +71,12 @@ Packaging nuance:
 Playback control:
 - The app exposes a small localhost-only control surface for `POST /control/play_pause`, `POST /control/next`, and `POST /control/previous`.
 - `launcher` uses that path so Tunes playback can be controlled without bringing the app to the foreground.
+
+iPhone web player:
+- The app serves a phone-first web player at `http://<mac-tailscale-ip>:47632/mobile`.
+- The mobile server binds to the Mac's Tailscale IPv4 address when one is available, and falls back to `127.0.0.1` if Tailscale is not detected.
+- No separate iOS app or token entry is required; Tailscale provides the private network path.
+- The player supports playlists, search, play/pause, next/previous, seeking, shuffle, and repeat modes.
 
 ## Project Structure
 
@@ -75,6 +92,7 @@ electron-tunes/
 └── src/
     ├── ipc/
     │   └── handlers.js   # IPC event handlers
+    ├── mobile/           # Tailscale-served iPhone web player
     ├── services/
     │   ├── downloader.js # YouTube → MP3 download logic
     │   ├── search.js     # YouTube search
@@ -90,3 +108,15 @@ Downloaded songs and playlists are stored locally in `~/Music/ElectronTunes/` �
 ## License
 
 MIT
+
+### Dictation playback control
+
+Flow uses `POST /control/dictation/begin?token=<uuid>` and
+`POST /control/dictation/end?token=<uuid>`. The begin response acknowledges that the
+renderer paused audio, so recording starts afterward. End resumes only music that was
+playing before the recording, on the same track, and only after the last session ends.
+Repeated requests are harmless. Manual playback/track changes override restoration;
+Flow renews active sessions every minute; abandoned sessions expire after ten minutes. `GET /control/state` reports paused state
+and playback position for diagnostics. These endpoints stay on `127.0.0.1:47631`.
+
+Run playback lifecycle regression checks with `node --test tests/dictation.test.js`.

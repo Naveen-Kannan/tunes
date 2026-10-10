@@ -1,6 +1,16 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
+    onDictationControl: callback => {
+        ipcRenderer.on('dictation-control', async (_event, request) => {
+            try {
+                const result = await callback(request.action, request.token);
+                ipcRenderer.send('dictation-control-result', { ...result, requestID: request.requestID });
+            } catch (error) {
+                ipcRenderer.send('dictation-control-result', { requestID: request.requestID, error: error.message });
+            }
+        });
+    },
     downloadSong: (youtubeUrl, playlistName) => ipcRenderer.invoke('download-song', { youtubeUrl, playlistName }),
     getDownloads: (playlistName) => ipcRenderer.invoke('get-downloads', playlistName),
     getPlaylists: () => ipcRenderer.invoke('get-playlists'),
