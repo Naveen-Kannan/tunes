@@ -5,6 +5,7 @@ const path = require('path');
 const { URL } = require('url');
 const playlistStore = require('../services/store');
 const pathManager = require('../utils/paths');
+const parseRange = require('./range');
 
 const mobilePort = 47632;
 let server = null;
@@ -82,45 +83,22 @@ async function handleApi(req, res, url) {
     sendJson(res, 404, { success: false, error: 'Not found' });
 }
 
-function parseRange(rangeHeader, fileSize) {
-    if (!rangeHeader) return null;
-    const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader);
-    if (!match) return null;
-
-    let start;
-    let end;
-    if (!match[1] && match[2]) {
-        const suffixLength = Number(match[2]);
-        if (Number.isNaN(suffixLength) || suffixLength <= 0) return null;
-        start = Math.max(fileSize - suffixLength, 0);
-        end = fileSize - 1;
-    } else {
-        start = match[1] ? Number(match[1]) : 0;
-        end = match[2] ? Number(match[2]) : fileSize - 1;
-    }
-
-    if (Number.isNaN(start) || Number.isNaN(end) || start > end || end >= fileSize) {
-        return null;
-    }
-    return { start, end };
-}
-
 function handleStream(req, res, url) {
-    const encodedFilename = url.pathname.slice('/stream/'.length);
-    const filename = decodeURIComponent(encodedFilename);
-    if (!filename || path.basename(filename) !== filename || path.extname(filename).toLowerCase() !== '.mp3') {
-        sendText(res, 400, 'invalid filename');
-        return;
-    }
+    let filePath;
+    try { filePath = pathManager.getSongPath(decodeURIComponent(url.pathname.slice('/stream/'.length))); }
+    catch { sendText(res, 400, 'invalid filename'); return; }
 
-    const filePath = path.join(pathManager.getAllDownloadsDir(), filename);
-    if (!fs.existsSync(filePath)) {
+    if (!fs.existsSync(filePath) || !fs.lstatSync(filePath).isFile()) {
         sendText(res, 404, 'not found');
         return;
     }
 
     const stat = fs.statSync(filePath);
     const range = parseRange(req.headers.range, stat.size);
+    if (range === false) {
+        res.writeHead(416, { 'Content-Range': `bytes */${stat.size}` }).end();
+        return;
+    }
     if (range) {
         res.writeHead(206, {
             'Content-Type': 'audio/mpeg',
@@ -128,7 +106,7 @@ function handleStream(req, res, url) {
             'Content-Length': range.end - range.start + 1,
             'Content-Range': `bytes ${range.start}-${range.end}/${stat.size}`
         });
-        fs.createReadStream(filePath, range).pipe(res);
+        streamFile(filePath, res, range);
         return;
     }
 
@@ -137,7 +115,14 @@ function handleStream(req, res, url) {
         'Accept-Ranges': 'bytes',
         'Content-Length': stat.size
     });
-    fs.createReadStream(filePath).pipe(res);
+    streamFile(filePath, res);
+}
+
+function streamFile(filePath, res, range) {
+    const stream = fs.createReadStream(filePath, range);
+    stream.on('error', () => res.destroy());
+    res.on('close', () => stream.destroy());
+    stream.pipe(res);
 }
 
 function isTailscaleIPv4(address) {
@@ -161,18 +146,16 @@ function getTailscaleAddress() {
     return null;
 }
 
-function start() {
-    if (server) return;
-    const bindAddress = getTailscaleAddress() || '127.0.0.1';
+function start({ port = mobilePort, bindAddress = getTailscaleAddress() || '127.0.0.1' } = {}) {
+    if (server) return server;
     server = http.createServer(async (req, res) => {
-        const url = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
-        const mobileFile = getMobileFilePath(url.pathname);
-        if (mobileFile && req.method === 'GET') {
-            serveStatic(res, mobileFile.filePath, mobileFile.contentType);
-            return;
-        }
-
         try {
+            const url = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
+            const mobileFile = getMobileFilePath(url.pathname);
+            if (mobileFile && req.method === 'GET') {
+                serveStatic(res, mobileFile.filePath, mobileFile.contentType);
+                return;
+            }
             if (url.pathname.startsWith('/api/')) {
                 await handleApi(req, res, url);
                 return;
@@ -190,12 +173,18 @@ function start() {
         sendText(res, 404, 'not found');
     });
 
-    server.listen(mobilePort, bindAddress, () => {
+    const instance = server;
+    server.on('error', error => {
+        console.error('Mobile server unavailable:', error.message);
+        if (server === instance) server = null;
+    });
+    server.listen(port, bindAddress, () => {
         console.log(`Tunes mobile server listening on http://${bindAddress}:${mobilePort}/mobile`);
         if (bindAddress === '127.0.0.1') {
             console.log('No Tailscale IPv4 address was detected; mobile server is localhost-only.');
         }
     });
+    return instance;
 }
 
 function stop() {

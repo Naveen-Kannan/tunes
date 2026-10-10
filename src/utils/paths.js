@@ -43,7 +43,16 @@ class PathManager {
 
     // Helper to get playlist JSON path
     getPlaylistPath(playlistName) {
+        if (typeof playlistName !== 'string' || !playlistName.trim() || /[\/\\\0]/.test(playlistName)) {
+            throw new Error('Invalid playlist name');
+        }
         return path.join(this.getDownloadsDir(), `${playlistName}.json`);
+    }
+    getSongPath(filename) {
+        if (typeof filename !== 'string' || path.basename(filename) !== filename || /[\\\0]/.test(filename) || path.extname(filename).toLowerCase() !== '.mp3') {
+            throw new Error('Invalid song filename');
+        }
+        return path.join(this.getAllDownloadsDir(), filename);
     }
 }
 

@@ -90,7 +90,9 @@ function startControlServer() {
     };
 
     controlServer = http.createServer(async (req, res) => {
-        const url = new URL(req.url, 'http://127.0.0.1');
+        let url;
+        try { url = new URL(req.url, 'http://127.0.0.1'); }
+        catch { res.writeHead(400).end('invalid request'); return; }
         const match = url.pathname.match(/^\/control\/dictation\/(begin|end)$/);
         if (match || (req.method === 'GET' && url.pathname === '/control/state')) {
             const action = match ? match[1] : 'state';
@@ -130,6 +132,10 @@ function startControlServer() {
         res.end();
     });
 
+    controlServer.on('error', error => {
+        console.error('Playback control server unavailable:', error.message);
+        controlServer = null;
+    });
     controlServer.listen(controlPort, '127.0.0.1');
 }
 

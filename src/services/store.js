@@ -1,13 +1,28 @@
 const { app } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const { randomUUID } = require('crypto');
 const pathManager = require('../utils/paths');
 
 class PlaylistStore {
     initialize() {
         pathManager.initialize();
-        this.mergeLegacyData();
-        this.migratePlaylists();
+        const directory = pathManager.getDownloadsDir();
+        const marker = path.join(directory, '.legacy-import');
+        const state = fs.existsSync(marker) ? fs.readFileSync(marker, 'utf8') : '';
+        if (state === 'done') return;
+        const existing = fs.readdirSync(pathManager.getAllDownloadsDir()).length > 0 ||
+            fs.readdirSync(directory).some(name => path.extname(name) === '.json');
+        if (!state && existing) {
+            fs.writeFileSync(marker, 'done', { mode: 0o600 });
+            return;
+        }
+        fs.writeFileSync(marker, 'pending', { mode: 0o600 });
+        try {
+            this.mergeLegacyData();
+            this.migratePlaylists();
+            fs.writeFileSync(marker, 'done', { mode: 0o600 });
+        } catch (error) { console.error('Legacy import incomplete; will retry:', error.message); }
     }
 
     mergeLegacyData() {
@@ -41,30 +56,12 @@ class PlaylistStore {
 
     mergeDirectories(source, target) {
         if (!fs.existsSync(source)) return;
-        if (!fs.existsSync(target)) fs.mkdirSync(target, { recursive: true });
-
-        try {
-            const items = fs.readdirSync(source, { withFileTypes: true });
-            for (const item of items) {
-                const sourcePath = path.join(source, item.name);
-                const targetPath = path.join(target, item.name);
-
-                if (item.isDirectory()) {
-                    this.mergeDirectories(sourcePath, targetPath);
-                } else if (item.isFile()) {
-                    // Only copy if file doesn't exist in target (preserve existing)
-                    if (!fs.existsSync(targetPath)) {
-                        try {
-                            fs.copyFileSync(sourcePath, targetPath);
-                            console.log(`Migrated: ${item.name}`);
-                        } catch (err) {
-                            console.error(`Failed to migrate ${item.name}:`, err);
-                        }
-                    }
-                }
-            }
-        } catch (e) {
-            console.error('Error in mergeDirectories:', e);
+        fs.mkdirSync(target, { recursive: true });
+        for (const item of fs.readdirSync(source, { withFileTypes: true })) {
+            const destination = path.join(target, item.name);
+            const origin = path.join(source, item.name);
+            if (item.isDirectory()) this.mergeDirectories(origin, destination);
+            else if (item.isFile() && !fs.existsSync(destination)) fs.copyFileSync(origin, destination);
         }
     }
 
@@ -76,22 +73,31 @@ class PlaylistStore {
         }
         try {
             const data = fs.readFileSync(playlistPath, 'utf8');
-            return JSON.parse(data);
+            const songs = JSON.parse(data);
+            if (!Array.isArray(songs)) throw new Error('Playlist must contain a song list');
+            songs.forEach(filename => pathManager.getSongPath(filename));
+            return songs;
         } catch (error) {
             console.error(`Error reading playlist ${playlistName}:`, error);
-            return [];
+            throw new Error(`Could not read playlist ${playlistName}`);
         }
     }
 
     // Helper to write playlist JSON
     writePlaylist(playlistName, songs) {
         const playlistPath = pathManager.getPlaylistPath(playlistName);
+        const temporary = playlistPath + `.${randomUUID()}.tmp`;
         try {
-            fs.writeFileSync(playlistPath, JSON.stringify(songs, null, 2));
+            if (!Array.isArray(songs)) throw new Error('Invalid playlist');
+            songs.forEach(filename => pathManager.getSongPath(filename));
+            fs.writeFileSync(temporary, JSON.stringify(songs, null, 2), { flag: 'wx', mode: 0o600 });
+            fs.renameSync(temporary, playlistPath);
             return true;
         } catch (error) {
             console.error(`Error writing playlist ${playlistName}:`, error);
             return false;
+        } finally {
+            if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
         }
     }
 
@@ -164,23 +170,20 @@ class PlaylistStore {
 
                         // Only move if file doesn't already exist in All_Downloads
                         if (!fs.existsSync(newPath)) {
-                            fs.renameSync(oldPath, newPath);
+                            fs.copyFileSync(oldPath, newPath);
                             console.log(`Moved ${file} to All_Downloads`);
                         }
                     }
 
                     // Create JSON playlist with the moved files
-                    this.writePlaylist(dirName, mp3Files);
+                    if (!this.writePlaylist(dirName, mp3Files)) throw new Error(`Could not migrate ${dirName}`);
                     console.log(`Created playlist JSON for ${dirName} with ${mp3Files.length} songs`);
 
-                    // Remove the old directory
-                    fs.rmdirSync(dirPath);
-                    console.log(`Removed old directory ${dirName}`);
                 }
             }
             console.log('Playlist migration completed');
         } catch (error) {
-            console.error('Error during playlist migration:', error);
+            throw error;
         }
     }
 
@@ -251,7 +254,7 @@ class PlaylistStore {
         }
 
         try {
-            fs.renameSync(oldPath, newPath);
+            fs.copyFileSync(oldPath, newPath);
             return { success: true, newName: sanitizedName };
         } catch (error) {
             return { success: false, error: error.message };
@@ -272,7 +275,7 @@ class PlaylistStore {
 
         const songs = [];
         for (const filename of filesList) {
-            const filePath = path.join(allDownloadsDir, filename);
+            const filePath = pathManager.getSongPath(filename);
             if (fs.existsSync(filePath)) {
                 let metadata = {
                     title: path.basename(filename, '.mp3'),
@@ -319,35 +322,28 @@ class PlaylistStore {
     }
 
     async deleteSongFile(filePath) {
-        if (!fs.existsSync(filePath)) {
-            return { success: false, error: 'File not found' };
-        }
-        if (path.extname(filePath).toLowerCase() !== '.mp3') {
-            return { success: false, error: 'Invalid file type' };
-        }
-
-        const normalizedFilePath = path.normalize(filePath);
-        const downloadsDir = pathManager.getDownloadsDir();
-        if (!normalizedFilePath.startsWith(path.normalize(downloadsDir))) {
-            return { success: false, error: 'File is not in downloads directory' };
-        }
-
-        const filename = path.basename(filePath);
-
-        // Remove from playlists
-        const playlists = await this.getPlaylists();
-        for (const playlistName of playlists) {
-            if (playlistName === 'All_Downloads') continue;
-            await this.removeSongFromPlaylist(playlistName, filename);
-        }
-
+        const applied = [];
         try {
+            if (typeof filePath !== 'string' || !fs.existsSync(filePath)) throw new Error('File not found');
+            if (path.extname(filePath).toLowerCase() !== '.mp3' || !fs.lstatSync(filePath).isFile()) throw new Error('Invalid song file');
+            const resolved = fs.realpathSync(filePath);
+            const library = fs.realpathSync(pathManager.getAllDownloadsDir());
+            if (path.dirname(resolved) !== library) throw new Error('File is not in the song library');
+            const filename = path.basename(filePath);
+            const changes = (await this.getPlaylists()).filter(name => name !== 'All_Downloads')
+                .map(name => ({ name, songs: this.readPlaylist(name) })).filter(item => item.songs.includes(filename));
+            for (const item of changes) {
+                if (!this.writePlaylist(item.name, item.songs.filter(song => song !== filename))) throw new Error(`Could not update playlist ${item.name}`);
+                applied.push(item);
+            }
             fs.unlinkSync(filePath);
             return { success: true };
         } catch (error) {
+            for (const item of applied) this.writePlaylist(item.name, item.songs);
             return { success: false, error: error.message };
         }
     }
+
 }
 
 module.exports = new PlaylistStore();

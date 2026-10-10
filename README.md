@@ -151,3 +151,17 @@ the user's next normal relaunch. Keep the old bundle until that relaunch is veri
 
 The desktop uses neutral surfaces, compact headings, and direct labels. Decorative
 branding, placeholder artwork, gradients, and promotional empty-state copy are omitted.
+
+### Library and server reliability
+
+Playlist filenames and song paths are confined to their library. Playlist JSON must
+be a list of MP3 basenames; malformed files are reported rather than overwritten.
+Writes use an adjacent temporary file and atomic rename. Failed track deletion
+restores playlist references. Legacy import runs once, preserving the canonical
+library during upgrades and retaining old migration folders as recovery copies.
+The `.legacy-import` marker records pending or completed imports.
+
+Mobile streaming clamps ranges to file size, returns 416 for unsatisfiable ranges,
+and closes its file stream when the client disconnects. Occupied control/mobile
+ports are reported without terminating the music player. The existing private
+network binding is preserved. `node --test tests/*.test.js` uses only fixtures.
